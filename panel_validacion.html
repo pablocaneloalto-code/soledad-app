@@ -165,7 +165,7 @@ const QUESTIONS = [
   {key:"p1", q:"¿Vive solo/a o siente que le falta compañía habitual?"},
   {key:"p2", q:"Cuando quiere compañía para algo —caminar, cocinar, conversar, salir— ¿a quién recurre hoy?"},
   {key:"p3", q:"¿Ha probado algo parecido (grupos, apps, clubes)? ¿Qué le pareció?"},
-  {key:"p4", q:"Le cuento la idea: un club de vecinos que la junta de forma constante con la misma persona —no un evento suelto, sino continuidad— para caminar, cocinar, conversar, aprender o enseñar algo. ¿Qué le parece, le interesaría?"},
+  {key:"p4", q:"Le cuento la idea: un club de vecinos donde usted se junta de forma constante con la misma persona —no un evento suelto, sino con continuidad— para caminar, cocinar, conversar, aprender o enseñar algo. ¿Qué le parece, le interesaría?"},
   {key:"p5", q:"¿Con qué tipo de actividades o con qué frecuencia le gustaría juntarse?"},
   {key:"p6", q:"¿Pagaría por eso? ¿Cuánto le parece razonable al mes?"},
   {key:"p7", q:"¿Qué le daría confianza, o qué le preocuparía de algo así?"},
@@ -176,11 +176,17 @@ const QUESTIONS = [
 // para que le sea más fácil responder, y aceleran el registro.
 const QUICK_OPTIONS = {
   p1: ["Vive sola/o","Vive acompañada/o, pero se siente sola/o","Vive con familia, no le falta compañía"],
-  p2: ["Un familiar","Un vecino/a","Un amigo/a","Nadie en particular"],
-  p3: ["Sí, le gustó","Sí, pero no le gustó","No ha probado nada"],
+  p2: ["Un familiar","Un vecino/a","Un amigo/a","Un ex compañero/a de trabajo","Alguien de un grupo o centro (junta de vecinos, adultos mayores, etc.)","A nadie en particular"],
+  p3: [
+    {label:"¿Dónde ha participado o probado algo similar?", opts:["Centro de madres","Junta de vecinos","Grupo de amigas (WhatsApp)","Grupo de la villa/condominio","Red de ex compañeros de trabajo","Centro de adultos mayores","No ha probado nada"]},
+    {label:"¿Qué le pareció?", opts:["Le gustó","No le gustó","Más o menos"]}
+  ],
   p5: ["Caminar o ejercicio","Cocinar o comer juntos","Conversar / tomar once","Aprender o enseñar algo","1 vez por semana","2 o más veces por semana"],
-  p6: ["No pagaría","Hasta $10.000","$10.000–20.000","$20.000–30.000","Más de $30.000"],
-  p7: ["Seguridad / desconfianza","El costo","No conocer a la persona","Nada le preocupa"],
+  p6: [
+    {label:"Rango de precio mensual", opts:["No pagaría","Hasta $10.000","$10.000–20.000","$20.000–30.000","Más de $30.000"]},
+    {label:"Pasatiempos que menciona (opcional, para tomar nota — son inputs reales para diseñar los encuentros)", opts:["Tejer / manualidades","Jardinería","Cocina","Lectura","Juegos de mesa / naipes","Música o baile"]}
+  ],
+  p7: ["Seguridad / desconfianza en desconocidos","El costo","No conocer a la persona","Miedo a que no haya buena conexión con la otra persona","Miedo a encariñarse y que la otra persona no siga","Qué dirá la familia o los vecinos","Su salud, algo le pase estando fuera de casa","Nada le preocupa"],
   p8: ["Sí, le paso el dato después","Por ahora no se le ocurre nadie"],
 };
 
@@ -328,7 +334,7 @@ function renderConversaciones(){
       ${renderEntrevistaDiagram(w.step)}
       <div class="progress-label">Pregunta ${w.step} de ${TOTAL_PREGUNTAS}</div>
       <div class="qtext">${item.q}</div>
-      ${QUICK_OPTIONS[item.key] ? `<p class="muted" style="margin-top:-6px;">Respuestas típicas — puedes leérselas a la persona si le cuesta responder abierto:</p>${renderQuickChips(item.key)}` : ""}
+      ${QUICK_OPTIONS[item.key] ? renderQuickChips(item.key) : ""}
       <textarea id="w_answer" style="min-height:90px" oninput="wizard.${item.key}=this.value" placeholder="Escribe lo que responde, con sus palabras...">${val}</textarea>
       ${w.step===4 ? renderInteresChips() : ""}
       <div class="stepnav">
@@ -488,10 +494,16 @@ function setInteres(v){
   render();
 }
 function renderQuickChips(key){
-  const opts = QUICK_OPTIONS[key] || [];
-  return `<div class="chip-row">${opts.map(o=>
-    `<div class="chip" onclick="quickInsert('${key}','${o.replace(/'/g,"\\'")}')">${o}</div>`
-  ).join("")}</div>`;
+  const raw = QUICK_OPTIONS[key];
+  if(!raw) return "";
+  const isGrouped = typeof raw[0] === "object";
+  const groups = isGrouped ? raw : [{label:"Respuestas típicas — puedes leérselas a la persona si le cuesta responder abierto", opts:raw}];
+  return groups.map(g => `
+    <p class="muted" style="margin:10px 0 4px;">${g.label}:</p>
+    <div class="chip-row">${g.opts.map(o=>
+      `<div class="chip" onclick="quickInsert('${key}','${o.replace(/'/g,"\\'")}')">${o}</div>`
+    ).join("")}</div>
+  `).join("");
 }
 function quickInsert(key, text){
   const current = (wizard[key] || "").trim();
