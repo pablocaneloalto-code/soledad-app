@@ -167,6 +167,16 @@ const QUESTIONS = [
   {key:"p6", q:"¿Qué le daría confianza, o qué le preocuparía de algo así?"},
 ];
 
+// Respuestas típicas por pregunta — se pueden leer en voz alta a la persona
+// para que le sea más fácil responder, y aceleran el registro.
+const QUICK_OPTIONS = {
+  p1: ["Vive sola/o","Vive acompañada/o, pero se siente sola/o","Vive con familia, no le falta compañía"],
+  p2: ["Un familiar","Un vecino/a","Un amigo/a","Nadie en particular"],
+  p3: ["Sí, le gustó","Sí, pero no le gustó","No ha probado nada"],
+  p5: ["No pagaría","Hasta $10.000","$10.000–20.000","$20.000–30.000","Más de $30.000"],
+  p6: ["Seguridad / desconfianza","El costo","No conocer a la persona","Nada le preocupa"],
+};
+
 const TABS = [
   {id:"resumen", label:"Resumen"},
   {id:"conversaciones", label:"Conversaciones de campo"},
@@ -310,6 +320,7 @@ function renderConversaciones(){
       ${renderEntrevistaDiagram(w.step)}
       <div class="progress-label">Pregunta ${w.step} de 6</div>
       <div class="qtext">${item.q}</div>
+      ${QUICK_OPTIONS[item.key] ? `<p class="muted" style="margin-top:-6px;">Respuestas típicas — puedes leérselas a la persona si le cuesta responder abierto:</p>${renderQuickChips(item.key)}` : ""}
       <textarea id="w_answer" style="min-height:90px" oninput="wizard.${item.key}=this.value" placeholder="Escribe lo que responde, con sus palabras...">${val}</textarea>
       ${w.step===4 ? renderInteresChips() : ""}
       <div class="stepnav">
@@ -466,6 +477,17 @@ function renderInteresChips(){
 }
 function setInteres(v){
   wizard.interes = v;
+  render();
+}
+function renderQuickChips(key){
+  const opts = QUICK_OPTIONS[key] || [];
+  return `<div class="chip-row">${opts.map(o=>
+    `<div class="chip" onclick="quickInsert('${key}','${o.replace(/'/g,"\\'")}')">${o}</div>`
+  ).join("")}</div>`;
+}
+function quickInsert(key, text){
+  const current = (wizard[key] || "").trim();
+  wizard[key] = current ? (current + "; " + text) : text;
   render();
 }
 function saveWizard(){
