@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de Validación — Membresía Complementaria</title>
+<style>
+  :root{
+    color-scheme: light;
+    --navy:#1F3B57;
+    --navy-light:#2d5478;
+    --accent:#B5651D;
+    --grey:#f2f2f2;
+    --border:#dde3e9;
+    --green:#1e8a4c;
+    --red:#c0392b;
+    --amber:#b8860b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:#f6f8fa; color:#222; line-height:1.45;
+  }
+  header{
+    background:var(--navy); color:#fff; padding:20px 16px 16px;
+  }
+  header h1{margin:0 0 4px; font-size:1.4rem;}
+  header p{margin:0; opacity:.85; font-size:.9rem;}
+  .topbar{
+    display:flex; flex-wrap:wrap; gap:8px; margin-top:14px;
+  }
+  .topbar button{
+    background:#fff; color:var(--navy); border:none; border-radius:6px;
+    padding:8px 14px; font-size:.85rem; font-weight:600; cursor:pointer;
+  }
+  .topbar button.secondary{background:transparent; color:#fff; border:1px solid rgba(255,255,255,.5);}
+  input[type=file]{display:none;}
+  nav.tabs{
+    display:flex; overflow-x:auto; background:#fff; border-bottom:1px solid var(--border);
+    position:sticky; top:0; z-index:10;
+  }
+  nav.tabs button{
+    flex:0 0 auto; background:none; border:none; padding:14px 16px; font-size:.85rem;
+    font-weight:600; color:#667; cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap;
+  }
+  nav.tabs button.active{color:var(--navy); border-bottom-color:var(--accent);}
+  main{max-width:900px; margin:0 auto; padding:18px 14px 60px;}
+  section{display:none;}
+  section.active{display:block;}
+  .card{
+    background:#fff; border:1px solid var(--border); border-radius:10px;
+    padding:16px; margin-bottom:14px;
+  }
+  .card h2{margin:0 0 8px; font-size:1.05rem; color:var(--navy);}
+  .card h3{margin:14px 0 6px; font-size:.95rem; color:var(--navy-light);}
+  .muted{color:#778; font-size:.85rem;}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  @media (max-width:600px){ .grid{grid-template-columns:1fr;} }
+  label{display:block; font-size:.8rem; font-weight:600; margin-bottom:4px; color:#445;}
+  input[type=text], input[type=number], input[type=date], select, textarea{
+    width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:6px;
+    font-size:.9rem; margin-bottom:10px; font-family:inherit;
+  }
+  textarea{min-height:60px; resize:vertical;}
+  .btn{
+    background:var(--navy); color:#fff; border:none; border-radius:6px;
+    padding:9px 16px; font-size:.85rem; font-weight:600; cursor:pointer;
+  }
+  .btn.ghost{background:none; color:var(--red); border:1px solid var(--red); padding:4px 10px; font-size:.75rem;}
+  table{width:100%; border-collapse:collapse; font-size:.83rem; margin-top:8px;}
+  th, td{text-align:left; padding:7px 8px; border-bottom:1px solid var(--border);}
+  th{background:var(--grey); color:#445; font-size:.75rem; text-transform:uppercase;}
+  .badge{
+    display:inline-block; padding:2px 8px; border-radius:12px; font-size:.72rem; font-weight:700;
+  }
+  .badge.si{background:#e6f4ea; color:var(--green);}
+  .badge.no{background:#fbe9e7; color:var(--red);}
+  .badge.tibio{background:#fdf3d9; color:var(--amber);}
+  .kpi-row{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:6px;}
+  .kpi{
+    flex:1 1 140px; background:var(--grey); border-radius:8px; padding:12px; text-align:center;
+  }
+  .kpi .num{font-size:1.6rem; font-weight:800; color:var(--navy);}
+  .kpi .lbl{font-size:.72rem; color:#667; text-transform:uppercase; letter-spacing:.03em;}
+  .banner{border-radius:8px; padding:14px; font-weight:700; margin-bottom:12px;}
+  .banner.go{background:#e6f4ea; color:var(--green); border:1px solid var(--green);}
+  .banner.nogo{background:#fbe9e7; color:var(--red); border:1px solid var(--red);}
+  .banner.pending{background:#fdf3d9; color:var(--amber); border:1px solid var(--amber);}
+  ul.checklist li{margin-bottom:6px; font-size:.88rem;}
+  .locked-note{font-size:.78rem; color:var(--accent); font-style:italic; margin-bottom:8px;}
+  .savebar{
+    position:sticky; bottom:0; background:#fff; border-top:1px solid var(--border);
+    padding:10px 14px; text-align:center; font-size:.78rem; color:#778;
+  }
+  .diagram{display:flex; flex-wrap:wrap; align-items:flex-start; gap:0; margin:6px 0 16px;}
+  .diagram .step{display:flex; flex-direction:column; align-items:center; text-align:center; flex:1 1 110px; min-width:90px; padding:0 4px;}
+  .diagram .step .circle{
+    width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:.9rem; margin-bottom:6px; color:#fff; background:#aab4bf; flex:0 0 auto;
+  }
+  .diagram .step .circle.done{background:var(--green);}
+  .diagram .step .circle.active{background:var(--navy);}
+  .diagram .step .label{font-size:.72rem; color:#445; line-height:1.3; font-weight:600;}
+  .diagram .step .sub{font-size:.68rem; color:#889; margin-top:2px;}
+  .diagram .arrow{flex:0 0 20px; color:#cfd7de; font-size:1.3rem; padding-top:5px; text-align:center;}
+  @media (max-width:640px){
+    .diagram{flex-direction:column; align-items:stretch;}
+    .diagram .step{flex-direction:row; text-align:left; gap:10px; padding:4px 0;}
+    .diagram .step .circle{margin-bottom:0;}
+    .diagram .arrow{transform:rotate(90deg); align-self:center; padding:0;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Panel de Validación — Membresía con Emparejamiento Complementario</h1>
+  <p>Piloto de campo en Ñuñoa · 3 semanas · Actualiza esto a medida que avanzas, módulo por módulo.</p>
+  <div class="topbar">
+    <button onclick="exportData()">⬇ Guardar progreso (descargar archivo)</button>
+    <button class="secondary" onclick="document.getElementById('importFile').click()">⬆ Cargar progreso</button>
+    <input type="file" id="importFile" accept="application/json" onchange="importData(event)">
+  </div>
+</header>
+
+<nav class="tabs" id="tabs"></nav>
+
+<main id="main"></main>
+
+<div class="savebar" id="savebar">Sin guardar aún — usa "Guardar progreso" antes de cerrar la página.</div>
+
+<script>
+// ---------- ESTADO ----------
+let state = {
+  conversaciones: [],
+  caja: { institucion:"", contacto:"", fecha:"", p1:"", p2:"", p3:"", veredicto:"pendiente" },
+  modulos: {
+    tecnico: "",
+    financiero: "",
+    legal: "",
+    riesgos: ""
+  },
+  decisionOverride: null // null = automático, "go" o "nogo" = manual
+};
+
+const TABS = [
+  {id:"resumen", label:"Resumen"},
+  {id:"conversaciones", label:"Conversaciones de campo"},
+  {id:"caja", label:"Caja de Compensación"},
+  {id:"decision", label:"Decisión Semana 3"},
+  {id:"modulos", label:"Próximos módulos"},
+];
+let activeTab = "resumen";
+
+// ---------- RENDER TABS ----------
+function renderTabs(){
+  const nav = document.getElementById("tabs");
+  nav.innerHTML = "";
+  TABS.forEach(t=>{
+    const b = document.createElement("button");
+    b.textContent = t.label;
+    b.className = t.id===activeTab ? "active":"";
+    b.onclick = ()=>{ activeTab = t.id; render(); };
+    nav.appendChild(b);
+  });
+}
+
+// ---------- HELPERS ----------
+function countInteres(nivel){
+  return state.conversaciones.filter(c=>c.interes===nivel).length;
+}
+function totalConversaciones(){ return state.conversaciones.length; }
+function precioOK(){
+  return state.conversaciones.some(c=>c.precio && c.precio.trim() !== "");
+}
+function cajaAbierta(){
+  return state.caja.veredicto !== "cerrada";
+}
+function criterioInteres(){ return countInteres("si") >= 8; }
+
+function decisionFinal(){
+  if(state.decisionOverride) return state.decisionOverride;
+  const total = totalConversaciones();
+  if(total < 15) return "pending";
+  return (criterioInteres() && cajaAbierta()) ? "go" : "nogo";
+}
+
+// ---------- DIAGRAMAS ----------
+function stepHTML(num, label, sub, status){
+  // status: 'pending' | 'active' | 'done'
+  return `<div class="step">
+    <div class="circle ${status}">${status==='done'?'✓':num}</div>
+    <div class="label">${label}</div>
+    ${sub ? `<div class="sub">${sub}</div>` : ""}
+  </div>`;
+}
+function arrowHTML(){ return `<div class="arrow">&#8594;</div>`; }
+
+function renderRoadmapDiagram(){
+  const total = totalConversaciones();
+  const s1 = total > 0 ? (total>=15 ? 'done':'active') : 'pending';
+  const s2 = state.caja.veredicto !== 'pendiente' ? 'done' : (total>=15 ? 'active':'pending');
+  const d = decisionFinal();
+  const s3 = d==='go' || d==='nogo' ? 'done' : (state.caja.veredicto!=='pendiente' && total>=15 ? 'active':'pending');
+  const s4 = d==='go' ? 'active' : 'pending';
+  return `
+  <div class="diagram">
+    ${stepHTML(1,"Semana 1","Terreno: 15 conversaciones + contacto caja", s1)}
+    ${arrowHTML()}
+    ${stepHTML(2,"Semana 2","Cerrar ciclo: reunión + registro", s2)}
+    ${arrowHTML()}
+    ${stepHTML(3,"Semana 3","Decisión GO / NO-GO", s3)}
+    ${arrowHTML()}
+    ${stepHTML(4,"Módulos","Técnico · Financiero · Legal · Riesgos", s4)}
+  </div>`;
+}
+
+function renderEntrevistaDiagram(){
+  return `
+  <div class="diagram">
+    ${stepHTML(1,"¿Vive solo/a?","Falta de compañía habitual", "active")}
+    ${arrowHTML()}
+    ${stepHTML(2,"¿A quién recurre hoy?","Para caminar, cocinar, conversar", "active")}
+    ${arrowHTML()}
+    ${stepHTML(3,"¿Ha probado algo así?","Grupos, apps, clubes", "active")}
+    ${arrowHTML()}
+    ${stepHTML(4,"¿Le interesaría?","Vínculo constante, misma persona", "active")}
+    ${arrowHTML()}
+    ${stepHTML(5,"¿Pagaría? ¿Cuánto?","Precio mensual razonable", "active")}
+    ${arrowHTML()}
+    ${stepHTML(6,"¿Qué le preocupa?","Confianza / objeciones", "active")}
+  </div>`;
+}
+
+// ---------- SECCIONES ----------
+function renderResumen(){
+  const total = totalConversaciones();
+  const si = countInteres("si");
+  const tibio = countInteres("tibio");
+  const no = countInteres("no");
+  return `
+  <div class="card">
+    <h2>Diagrama del plan</h2>
+    ${renderRoadmapDiagram()}
+  </div>
+  <div class="card">
+    <h2>Cómo vas</h2>
+    <div class="kpi-row">
+      <div class="kpi"><div class="num">${total}/15</div><div class="lbl">Conversaciones</div></div>
+      <div class="kpi"><div class="num">${si}</div><div class="lbl">Interés real</div></div>
+      <div class="kpi"><div class="num">${tibio}</div><div class="lbl">Tibio</div></div>
+      <div class="kpi"><div class="num">${no}</div><div class="lbl">Sin interés</div></div>
+    </div>
+    <p class="muted">Meta semana 1-2: llegar a 15 conversaciones completas. Umbral de decisión: 8 o más con interés real.</p>
+  </div>
+  <div class="card">
+    <h2>Estado de la caja de compensación</h2>
+    <p><strong>${state.caja.institucion || "(sin definir aún)"}</strong> — veredicto:
+      <span class="badge ${state.caja.veredicto==='abierta'?'si':state.caja.veredicto==='cerrada'?'no':'tibio'}">${state.caja.veredicto}</span>
+    </p>
+  </div>
+  <div class="card">
+    <h2>Recordatorio</h2>
+    <ul class="checklist">
+      <li>☐ Ir al Polideportivo de Ñuñoa (gimnasia mayores, lun/mié/vie 10:00 u 11:00)</li>
+      <li>☐ Ir a Golden Music una noche llena</li>
+      <li>☐ Contactar a Caja Los Andes o La Araucana</li>
+      <li>☐ Vaciar cada conversación en la pestaña "Conversaciones de campo" apenas la tengas</li>
+    </ul>
+  </div>`;
+}
+
+function renderConversaciones(){
+  const rows = state.conversaciones.map((c,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td>${c.nombre||"—"}</td>
+      <td><span class="badge ${c.interes}">${c.interes==='si'?'Interés real':c.interes==='tibio'?'Tibio':'Sin interés'}</span></td>
+      <td>${c.precio||"—"}</td>
+      <td>${c.objecion||"—"}</td>
+      <td><button class="btn ghost" onclick="delConv(${i})">Borrar</button></td>
+    </tr>`).join("");
+  return `
+  <div class="card">
+    <h2>Guía de la entrevista — paso a paso</h2>
+    <p class="muted">Sigue este orden en la conversación. No es un guion de venta, es una charla.</p>
+    ${renderEntrevistaDiagram()}
+    <ol class="checklist" style="padding-left:18px;">
+      <li><strong>Paso 1.</strong> ¿Vive solo/a o siente que le falta compañía habitual?</li>
+      <li><strong>Paso 2.</strong> Cuando quiere compañía para algo — caminar, cocinar, conversar, salir — ¿a quién recurre hoy?</li>
+      <li><strong>Paso 3.</strong> ¿Ha probado algo parecido (grupos, apps, clubes)? ¿Qué le pareció?</li>
+      <li><strong>Paso 4.</strong> Si existiera algo que le junte de forma constante con la misma persona —no un evento suelto, sino continuidad— ¿le interesaría?</li>
+      <li><strong>Paso 5.</strong> ¿Pagaría por eso? ¿Cuánto le parece razonable al mes?</li>
+      <li><strong>Paso 6.</strong> ¿Qué le daría confianza, o qué le preocuparía de algo así?</li>
+    </ol>
+  </div>
+  <div class="card">
+    <h2>Registrar resultado de la conversación</h2>
+    <div class="grid">
+      <div><label>Nombre o iniciales</label><input type="text" id="c_nombre" placeholder="Ej: Sra. M., 68 años"></div>
+      <div><label>Nivel de interés en la pregunta 4</label>
+        <select id="c_interes">
+          <option value="si">Interés real</option>
+          <option value="tibio">Tibio / dudoso</option>
+          <option value="no">Sin interés</option>
+        </select>
+      </div>
+      <div><label>Precio mensual mencionado (pregunta 5)</label><input type="text" id="c_precio" placeholder="Ej: $15.000 CLP/mes"></div>
+      <div><label>Objeción o preocupación principal (pregunta 6)</label><input type="text" id="c_objecion" placeholder="Ej: seguridad, desconfianza"></div>
+    </div>
+    <label>Notas libres</label>
+    <textarea id="c_notas" placeholder="Cualquier detalle textual relevante de las preguntas 1-3"></textarea>
+    <button class="btn" onclick="addConv()">Agregar conversación</button>
+  </div>
+  <div class="card">
+    <h2>Registro (${totalConversaciones()}/15)</h2>
+    <table>
+      <tr><th>#</th><th>Nombre</th><th>Interés</th><th>Precio</th><th>Objeción</th><th></th></tr>
+      ${rows || '<tr><td colspan="6" class="muted">Aún no hay conversaciones registradas.</td></tr>'}
+    </table>
+  </div>`;
+}
+
+function renderCaja(){
+  const c = state.caja;
+  return `
+  <div class="card">
+    <h2>Reunión con Caja de Compensación</h2>
+    <div class="grid">
+      <div><label>Institución</label>
+        <select id="k_institucion">
+          <option ${c.institucion==='Los Andes'?'selected':''}>Los Andes</option>
+          <option ${c.institucion==='La Araucana'?'selected':''}>La Araucana</option>
+          <option ${c.institucion==='Los Héroes'?'selected':''}>Los Héroes</option>
+          <option ${c.institucion==='Caja 18'?'selected':''}>Caja 18</option>
+        </select>
+      </div>
+      <div><label>Contacto</label><input type="text" id="k_contacto" value="${c.contacto}"></div>
+      <div><label>Fecha de la reunión</label><input type="date" id="k_fecha" value="${c.fecha}"></div>
+      <div><label>Veredicto</label>
+        <select id="k_veredicto">
+          <option value="pendiente" ${c.veredicto==='pendiente'?'selected':''}>Pendiente</option>
+          <option value="abierta" ${c.veredicto==='abierta'?'selected':''}>Puerta abierta</option>
+          <option value="cerrada" ${c.veredicto==='cerrada'?'selected':''}>Cerrada / no viable</option>
+        </select>
+      </div>
+    </div>
+    <h3>¿Cómo deciden qué beneficios nuevos suman al catálogo de pensionados?</h3>
+    <textarea id="k_p1">${c.p1}</textarea>
+    <h3>¿El descuento por pensión admite proveedores externos o solo beneficios propios?</h3>
+    <textarea id="k_p2">${c.p2}</textarea>
+    <h3>¿Qué necesitarían ver para evaluar una propuesta como esta?</h3>
+    <textarea id="k_p3">${c.p3}</textarea>
+    <button class="btn" onclick="saveCaja()">Guardar notas de la reunión</button>
+  </div>`;
+}
+
+function renderDecision(){
+  const d = decisionFinal();
+  const total = totalConversaciones();
+  let bannerClass = d==="go" ? "go" : d==="nogo" ? "nogo" : "pending";
+  let bannerText = d==="go"
+    ? "GO — Los tres criterios se cumplen. Pasar al estudio técnico y financiero formal."
+    : d==="nogo"
+    ? "NO-GO por ahora — no se cumplen los criterios. Revisar segmento, precio o propuesta antes de seguir."
+    : `Pendiente — llevas ${total}/15 conversaciones. Completa el registro para ver el veredicto.`;
+  return `
+  <div class="banner ${bannerClass}">${bannerText}</div>
+  <div class="card">
+    <h2>Los tres criterios</h2>
+    <table>
+      <tr><th>Criterio</th><th>Umbral</th><th>Estado</th></tr>
+      <tr><td>Interés genuino</td><td>≥ 8 de 15</td><td>${countInteres("si")} / 15 ${criterioInteres()?'✅':'❌'}</td></tr>
+      <tr><td>Precio mencionado</td><td>Al menos algunos precios reales registrados</td><td>${precioOK()?'✅ hay datos':'❌ sin datos aún'}</td></tr>
+      <tr><td>Caja de compensación</td><td>No cierra la puerta</td><td>${cajaAbierta()?'✅ abierta / pendiente':'❌ cerrada'}</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h2>Forzar decisión manual (opcional)</h2>
+    <p class="muted">Úsalo solo si quieres anular el cálculo automático con tu propio criterio.</p>
+    <select id="override" onchange="setOverride(this.value)">
+      <option value="" ${state.decisionOverride===null?'selected':''}>Automático (recomendado)</option>
+      <option value="go" ${state.decisionOverride==='go'?'selected':''}>Forzar GO</option>
+      <option value="nogo" ${state.decisionOverride==='nogo'?'selected':''}>Forzar NO-GO</option>
+    </select>
+  </div>`;
+}
+
+function renderModulos(){
+  const locked = decisionFinal() !== "go";
+  const note = locked ? `<p class="locked-note">Estos módulos se activan formalmente cuando la Semana 3 dé GO — pero puedes ir dejando notas sueltas desde ya.</p>` : "";
+  const m = state.modulos;
+  return `
+  <div class="card">
+    <h2>Próximos módulos del proyecto</h2>
+    ${note}
+    <h3>1. Estudio técnico (cómo se entrega el servicio)</h3>
+    <textarea id="m_tecnico" placeholder="Mecanismo de emparejamiento, cadencia de encuentros, alianzas físicas...">${m.tecnico}</textarea>
+    <h3>2. Estudio financiero (VAN / TIR)</h3>
+    <textarea id="m_financiero" placeholder="Inversión inicial, flujo de caja, punto de equilibrio...">${m.financiero}</textarea>
+    <h3>3. Estudio legal-organizacional</h3>
+    <textarea id="m_legal" placeholder="Estructura societaria, seguros, convenios institucionales...">${m.legal}</textarea>
+    <h3>4. Riesgos y sensibilidad</h3>
+    <textarea id="m_riesgos" placeholder="Qué pasa si sube el churn, si TEN lanza algo físico...">${m.riesgos}</textarea>
+    <button class="btn" onclick="saveModulos()">Guardar notas de módulos</button>
+  </div>`;
+}
+
+// ---------- ACCIONES ----------
+function addConv(){
+  const nombre = document.getElementById("c_nombre").value;
+  const interes = document.getElementById("c_interes").value;
+  const precio = document.getElementById("c_precio").value;
+  const objecion = document.getElementById("c_objecion").value;
+  const notas = document.getElementById("c_notas").value;
+  if(totalConversaciones() >= 15 && !confirm("Ya tienes 15 registradas. ¿Agregar una más igual?")) return;
+  state.conversaciones.push({nombre, interes, precio, objecion, notas});
+  markUnsaved();
+  render();
+}
+function delConv(i){
+  state.conversaciones.splice(i,1);
+  markUnsaved();
+  render();
+}
+function saveCaja(){
+  state.caja = {
+    institucion: document.getElementById("k_institucion").value,
+    contacto: document.getElementById("k_contacto").value,
+    fecha: document.getElementById("k_fecha").value,
+    p1: document.getElementById("k_p1").value,
+    p2: document.getElementById("k_p2").value,
+    p3: document.getElementById("k_p3").value,
+    veredicto: document.getElementById("k_veredicto").value,
+  };
+  markUnsaved();
+  render();
+}
+function saveModulos(){
+  state.modulos = {
+    tecnico: document.getElementById("m_tecnico").value,
+    financiero: document.getElementById("m_financiero").value,
+    legal: document.getElementById("m_legal").value,
+    riesgos: document.getElementById("m_riesgos").value,
+  };
+  markUnsaved();
+  render();
+  alert("Notas de módulos guardadas en memoria. No olvides descargar el progreso.");
+}
+function setOverride(v){
+  state.decisionOverride = v === "" ? null : v;
+  markUnsaved();
+  render();
+}
+
+// ---------- EXPORT / IMPORT ----------
+function exportData(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `progreso_validacion_${stamp}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  document.getElementById("savebar").textContent = "Progreso descargado el " + new Date().toLocaleString();
+}
+function importData(ev){
+  const file = ev.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try{
+      const loaded = JSON.parse(e.target.result);
+      state = Object.assign({conversaciones:[], caja:{}, modulos:{}, decisionOverride:null}, loaded);
+      render();
+      document.getElementById("savebar").textContent = "Progreso cargado desde archivo.";
+    }catch(err){
+      alert("No se pudo leer el archivo. ¿Es el JSON exportado desde este panel?");
+    }
+  };
+  reader.readAsText(file);
+}
+function markUnsaved(){
+  document.getElementById("savebar").textContent = "Cambios sin guardar — usa \"Guardar progreso\" antes de cerrar la página.";
+}
+
+// ---------- RENDER PRINCIPAL ----------
+function render(){
+  renderTabs();
+  const main = document.getElementById("main");
+  const sections = {
+    resumen: renderResumen,
+    conversaciones: renderConversaciones,
+    caja: renderCaja,
+    decision: renderDecision,
+    modulos: renderModulos,
+  };
+  main.innerHTML = "";
+  Object.keys(sections).forEach(id=>{
+    const div = document.createElement("section");
+    div.id = id;
+    div.className = id===activeTab ? "active":"";
+    div.innerHTML = sections[id]();
+    main.appendChild(div);
+  });
+}
+
+render();
+</script>
+</body>
+</html>
