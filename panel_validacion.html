@@ -154,17 +154,22 @@ let state = {
 
 // Estado efímero de la entrevista en curso (no se exporta en el JSON)
 function newWizard(){
-  return { step:0, nombre:"", p1:"", p2:"", p3:"", p4:"", p5:"", p6:"", interes:"si" };
+  return { step:0, nombre:"", p1:"", p2:"", p3:"", p4:"", p5:"", p6:"", p7:"", p8:"", interes:"si" };
 }
 let wizard = newWizard();
+const TOTAL_PREGUNTAS = 8;
+
+const OPENING_SCRIPT = "Antes de preguntar, preséntate y cuéntale el motivo: “Hola, estoy conversando con vecinos de la comuna porque estoy viendo si tiene sentido una idea para que la gente tenga más compañía y actividades constantes con las mismas personas, no solo eventos sueltos. Es algo que todavía estoy evaluando, no existe todavía, y me gustaría saber su opinión. ¿Tiene unos minutos para un par de preguntas?”";
 
 const QUESTIONS = [
   {key:"p1", q:"¿Vive solo/a o siente que le falta compañía habitual?"},
   {key:"p2", q:"Cuando quiere compañía para algo —caminar, cocinar, conversar, salir— ¿a quién recurre hoy?"},
   {key:"p3", q:"¿Ha probado algo parecido (grupos, apps, clubes)? ¿Qué le pareció?"},
-  {key:"p4", q:"Si existiera algo que le junte de forma constante con la misma persona —no un evento suelto, sino continuidad— ¿le interesaría?"},
-  {key:"p5", q:"¿Pagaría por eso? ¿Cuánto le parece razonable al mes?"},
-  {key:"p6", q:"¿Qué le daría confianza, o qué le preocuparía de algo así?"},
+  {key:"p4", q:"Le cuento la idea: un club de vecinos que la junta de forma constante con la misma persona —no un evento suelto, sino continuidad— para caminar, cocinar, conversar, aprender o enseñar algo. ¿Qué le parece, le interesaría?"},
+  {key:"p5", q:"¿Con qué tipo de actividades o con qué frecuencia le gustaría juntarse?"},
+  {key:"p6", q:"¿Pagaría por eso? ¿Cuánto le parece razonable al mes?"},
+  {key:"p7", q:"¿Qué le daría confianza, o qué le preocuparía de algo así?"},
+  {key:"p8", q:"Antes de despedirnos: ¿conoce a alguien más —vecino, familiar, amigo— a quien le podría interesar esto?"},
 ];
 
 // Respuestas típicas por pregunta — se pueden leer en voz alta a la persona
@@ -173,8 +178,10 @@ const QUICK_OPTIONS = {
   p1: ["Vive sola/o","Vive acompañada/o, pero se siente sola/o","Vive con familia, no le falta compañía"],
   p2: ["Un familiar","Un vecino/a","Un amigo/a","Nadie en particular"],
   p3: ["Sí, le gustó","Sí, pero no le gustó","No ha probado nada"],
-  p5: ["No pagaría","Hasta $10.000","$10.000–20.000","$20.000–30.000","Más de $30.000"],
-  p6: ["Seguridad / desconfianza","El costo","No conocer a la persona","Nada le preocupa"],
+  p5: ["Caminar o ejercicio","Cocinar o comer juntos","Conversar / tomar once","Aprender o enseñar algo","1 vez por semana","2 o más veces por semana"],
+  p6: ["No pagaría","Hasta $10.000","$10.000–20.000","$20.000–30.000","Más de $30.000"],
+  p7: ["Seguridad / desconfianza","El costo","No conocer a la persona","Nada le preocupa"],
+  p8: ["Sí, le paso el dato después","Por ahora no se le ocurre nadie"],
 };
 
 const TABS = [
@@ -205,7 +212,7 @@ function countInteres(nivel){
 }
 function totalConversaciones(){ return state.conversaciones.length; }
 function precioOK(){
-  return state.conversaciones.some(c=>c.p5 && c.p5.trim() !== "");
+  return state.conversaciones.some(c=>c.p6 && c.p6.trim() !== "");
 }
 function cajaAbierta(){
   return state.caja.veredicto !== "cerrada";
@@ -250,12 +257,12 @@ function renderRoadmapDiagram(){
 }
 
 function renderEntrevistaDiagram(currentStep){
-  const labels = ["¿Vive solo/a?","¿A quién recurre?","¿Probó algo así?","¿Le interesaría?","¿Pagaría?","¿Qué le preocupa?"];
+  const labels = ["¿Vive solo/a?","¿A quién recurre?","¿Probó algo así?","¿Le interesaría?","¿Qué actividades?","¿Pagaría?","¿Qué le preocupa?","¿Conoce a alguien?"];
   let html = `<div class="diagram">`;
-  for(let n=1;n<=6;n++){
+  for(let n=1;n<=TOTAL_PREGUNTAS;n++){
     const status = n<currentStep ? 'done' : n===currentStep ? 'active' : 'pending';
     html += stepHTML(n, labels[n-1], "", status);
-    if(n<6) html += arrowHTML();
+    if(n<TOTAL_PREGUNTAS) html += arrowHTML();
   }
   html += `</div>`;
   return html;
@@ -308,27 +315,28 @@ function renderConversaciones(){
     <div class="card">
       <h2>Nueva entrevista</h2>
       <p class="muted">La llenas con la persona presente, una pregunta a la vez.</p>
+      <div class="banner pending" style="font-weight:400; font-size:.85rem;">${OPENING_SCRIPT}</div>
       <label>Nombre o iniciales</label>
       <input type="text" id="w_nombre" value="${w.nombre}" placeholder="Ej: Sra. M., 68 años" oninput="wizard.nombre=this.value">
       <button class="btn" onclick="startWizard()">Comenzar entrevista →</button>
     </div>`;
-  } else if(w.step >= 1 && w.step <= 6){
+  } else if(w.step >= 1 && w.step <= TOTAL_PREGUNTAS){
     const item = QUESTIONS[w.step-1];
     const val = w[item.key] || "";
     stepBlock = `
     <div class="card">
       ${renderEntrevistaDiagram(w.step)}
-      <div class="progress-label">Pregunta ${w.step} de 6</div>
+      <div class="progress-label">Pregunta ${w.step} de ${TOTAL_PREGUNTAS}</div>
       <div class="qtext">${item.q}</div>
       ${QUICK_OPTIONS[item.key] ? `<p class="muted" style="margin-top:-6px;">Respuestas típicas — puedes leérselas a la persona si le cuesta responder abierto:</p>${renderQuickChips(item.key)}` : ""}
       <textarea id="w_answer" style="min-height:90px" oninput="wizard.${item.key}=this.value" placeholder="Escribe lo que responde, con sus palabras...">${val}</textarea>
       ${w.step===4 ? renderInteresChips() : ""}
       <div class="stepnav">
         ${w.step>1 ? `<button class="btn outline" onclick="wizardPrev()">← Anterior</button>` : `<span></span>`}
-        ${w.step<6 ? `<button class="btn" onclick="wizardNext()">Siguiente →</button>` : `<button class="btn" onclick="wizardReview()">Ver resumen →</button>`}
+        ${w.step<TOTAL_PREGUNTAS ? `<button class="btn" onclick="wizardNext()">Siguiente →</button>` : `<button class="btn" onclick="wizardReview()">Ver resumen →</button>`}
       </div>
     </div>`;
-  } else if(w.step === 7){
+  } else if(w.step === TOTAL_PREGUNTAS+1){
     stepBlock = `
     <div class="card">
       <h2>Resumen antes de guardar</h2>
@@ -336,7 +344,7 @@ function renderConversaciones(){
       ${QUESTIONS.map((item,i)=>`<p><strong>P${i+1}.</strong> ${item.q}<br><span class="muted">${w[item.key] || "(sin respuesta)"}</span></p>`).join("")}
       <p><strong>Nivel de interés (P4):</strong> <span class="badge ${w.interes}">${w.interes==='si'?'Interés real':w.interes==='tibio'?'Tibio':'Sin interés'}</span></p>
       <div class="stepnav">
-        <button class="btn outline" onclick="wizard.step=6; render();">← Editar</button>
+        <button class="btn outline" onclick="wizard.step=TOTAL_PREGUNTAS; render();">← Editar</button>
         <button class="btn" onclick="saveWizard()">Guardar conversación ✓</button>
       </div>
     </div>`;
@@ -347,8 +355,8 @@ function renderConversaciones(){
       <td>${i+1}</td>
       <td>${c.nombre||"—"}</td>
       <td><span class="badge ${c.interes}">${c.interes==='si'?'Interés real':c.interes==='tibio'?'Tibio':'Sin interés'}</span></td>
-      <td>${c.p5||"—"}</td>
       <td>${c.p6||"—"}</td>
+      <td>${c.p7||"—"}</td>
       <td><button class="btn ghost" onclick="delConv(${i})">Borrar</button></td>
     </tr>`).join("");
 
@@ -458,7 +466,7 @@ function startWizard(){
   render();
 }
 function wizardNext(){
-  if(wizard.step < 6) wizard.step++;
+  if(wizard.step < TOTAL_PREGUNTAS) wizard.step++;
   render();
 }
 function wizardPrev(){
@@ -466,7 +474,7 @@ function wizardPrev(){
   render();
 }
 function wizardReview(){
-  wizard.step = 7;
+  wizard.step = TOTAL_PREGUNTAS+1;
   render();
 }
 function renderInteresChips(){
@@ -495,7 +503,7 @@ function saveWizard(){
     nombre: wizard.nombre,
     p1: wizard.p1, p2: wizard.p2, p3: wizard.p3, p4: wizard.p4,
     interes: wizard.interes,
-    p5: wizard.p5, p6: wizard.p6
+    p5: wizard.p5, p6: wizard.p6, p7: wizard.p7, p8: wizard.p8
   });
   wizard = newWizard();
   markUnsaved();
@@ -549,9 +557,11 @@ function buildTranscript(){
     lines.push(`P1 (¿Vive solo/a o le falta compañía?): ${c.p1 || "(sin respuesta)"}`);
     lines.push(`P2 (¿A quién recurre hoy?): ${c.p2 || "(sin respuesta)"}`);
     lines.push(`P3 (¿Ha probado algo parecido?): ${c.p3 || "(sin respuesta)"}`);
-    lines.push(`P4 (¿Le interesaría algo con continuidad?): ${c.p4 || "(sin respuesta)"} [Interés: ${c.interes}]`);
-    lines.push(`P5 (¿Pagaría? ¿Cuánto?): ${c.p5 || "(sin respuesta)"}`);
-    lines.push(`P6 (¿Qué le preocupa / le da confianza?): ${c.p6 || "(sin respuesta)"}`);
+    lines.push(`P4 (concepto explicado — ¿le interesaría?): ${c.p4 || "(sin respuesta)"} [Interés: ${c.interes}]`);
+    lines.push(`P5 (¿Qué actividades / frecuencia le gustaría?): ${c.p5 || "(sin respuesta)"}`);
+    lines.push(`P6 (¿Pagaría? ¿Cuánto?): ${c.p6 || "(sin respuesta)"}`);
+    lines.push(`P7 (¿Qué le preocupa / le da confianza?): ${c.p7 || "(sin respuesta)"}`);
+    lines.push(`P8 (¿Conoce a alguien más a quien le interesaría?): ${c.p8 || "(sin respuesta)"}`);
     lines.push("");
   });
   lines.push("--- Caja de Compensación ---");
